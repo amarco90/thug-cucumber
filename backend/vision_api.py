@@ -86,13 +86,22 @@ class VisionApi:
             else:
                 text_response[input_img] = []
 
+            hrefs = []
+
+            def get_href(attrs, new=False):
+                hrefs.append(attrs['href'])
+                return bleach.callbacks.nofollow(attrs, new)
+
             # contains all concatenated text
             text_response = text_response.values()[0][1:]
             response = []
             for resp in text_response:
                 desc = resp['description']
-                link_desc = bleach.linkify(desc)
+                link_desc = bleach.linkify(desc, [get_href])
                 if link_desc != desc:
+                    href = hrefs[-1]
+                    print href
+                    resp['href'] = href
                     response.append(resp)
 
             return json.dumps(response)
