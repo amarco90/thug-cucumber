@@ -84,4 +84,3 @@ if __name__ == '__main__':
 
     vision = VisionApi()
     text_response = vision.detect_text(input_img)
-    import pdb; pdb.set_trace()
