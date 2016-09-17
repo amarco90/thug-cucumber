@@ -72,6 +72,8 @@
                         } //,
                         //dataType: 'json' // FIXME: I have no clue why this is not enough
                         // (maybe mime type from server?)
+                    }).fail(() => {
+                        console.log('oops, something went wrong with the request');
                     }).done(function(respond) {
                         respond = JSON.parse(respond);
                         console.log(respond);
@@ -115,10 +117,7 @@
                             );
 
                             $(document).on('click', '.bounding-box', (event) => {
-                                var url = $(event.target).data('url');
-                                if (url.startsWith('www.'))
-                                    url = 'http://' + url;
-                                window.location = url;
+                                window.location = $(event.target).data('url');
                             });
                         }
                     });

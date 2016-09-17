@@ -4,39 +4,58 @@ __author__ = 'tbeltramelli'
 import argparse
 from modules.Utils import *
 from modules.Filtering import *
-from matplotlib import pyplot as plt
 
 
 def main():
     images = ["assets/IMG_2560.jpg", "assets/IMG_0258.jpg", "assets/IMG_0257.jpg", "assets/IMG_0256.jpg",
-              "assets/IMG_0254.jpg", "assets/IMG_0253.jpg"]
+              "assets/IMG_0253.jpg"]
+
+    for image_path in images:
+        get_url_segment(image_path)
+
+
+def get_url_segment(image_path):
+    original_image = Utils.get_image(image_path)
 
     kernels = ["assets/kernel.png"]
 
+    result = search_for_template(original_image, kernels)
+    if result is None:
+        result = search_for_template(original_image, kernels, use_negative=True)
+
+    if result is not None:
+        Utils.show(Utils.resize(original_image, 600))
+        Utils.show(result)
+
+    return result
+
+
+def search_for_template(original_image, kernels, use_negative=False):
     best = 0
     url_image = None
-    for image_path in images:
-        original_image = Utils.get_image(image_path)
 
-        for kernel_path in kernels:
-            white_kernel = Utils.get_image(kernel_path)
-            white_kernel = Filtering.get_gray_scale_rgb(white_kernel)
-            black_kernel = Filtering.negative(white_kernel)
+    for kernel_path in kernels:
+        kernel = Utils.get_image(kernel_path)
+        kernel = Filtering.get_gray_scale_rgb(kernel)
+        if use_negative:
+            kernel = Filtering.negative(kernel)
 
-            result, score = detect_url(original_image, white_kernel)
+        result, score = detect_url(original_image, kernel)
 
-            if result is None:
-                continue
+        if result is None:
+            continue
 
-            if score > best:
-                best = score
-                url_image = result
+        if score > best:
+            best = score
+            url_image = result
 
-        if url_image is not None:
-            Utils.show(url_image)
+    if url_image is not None:
+        return url_image
+
+    return None
 
 
-def detect_url(original_image, template, score_threshold=0.4, to_show=False):
+def detect_url(original_image, template, score_threshold=0.4, to_extract=True, to_show=False):
     template_width, template_height = template.shape[::-1]
 
     color_image = np.copy(original_image)
@@ -74,15 +93,20 @@ def detect_url(original_image, template, score_threshold=0.4, to_show=False):
     end_x = result_width - sample_width
     end_y = best_candidate[1][1] + (sample_height / 2)
 
+    if to_extract:
+        resulting_img = result[start_y:end_y, start_x:end_x]
+    else:
+        resulting_img = np.zeros((result_height, result_width), np.float32)
+        resulting_img[start_y:end_y, start_x:end_x] = result[start_y:end_y, start_x:end_x]
+
     if to_show:
         image_to_show = np.copy(original_image)
         image_to_show = Utils.resize(image_to_show, best_candidate[2])
-        cv2.rectangle(image_to_show, best_candidate[0], best_candidate[1], 255, 2)
         cv2.rectangle(image_to_show, (start_x, start_y), (end_x, end_y), [0, 0, 255], 2)
-        Utils.show(image_to_show)
-        Utils.show(result[start_y:end_y, start_x:end_x])
+        Utils.show(Utils.resize(image_to_show, 600))
+        Utils.show(Utils.resize(Filtering.get_rgb_scale_gray(resulting_img), 600))
 
-    return result[start_y:end_y, start_x:end_x], best_score
+    return resulting_img, best_score
 
 
 def preprocess(color_image, target_width):

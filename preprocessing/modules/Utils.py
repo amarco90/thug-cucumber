@@ -33,5 +33,6 @@ class Utils:
             cv2.namedWindow(("image %d" % i), cv2.WINDOW_AUTOSIZE)
             cv2.imshow(("image %d" % i), img)
             cv2.moveWindow(("image %d" % i), 0, 0)
-            cv2.waitKey(0)
-            cv2.destroyWindow(("image %d" % i))
+
+        cv2.waitKey(0)
+        cv2.destroyWindow(("image %d" % i))
