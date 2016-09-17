@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import json
 import os
 
-from flask import Flask, flash, redirect, request, send_from_directory, url_for
+from flask import (Flask, flash, jsonify, redirect, request,
+                   send_from_directory, url_for)
 from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = '/tmp/uploads/'
@@ -48,8 +50,8 @@ def upload_file():
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
+    with open('./static/mock_data.json') as mock_data:
+        return jsonify(json.load(mock_data))
 
 if __name__ == "__main__":
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
