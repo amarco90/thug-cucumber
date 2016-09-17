@@ -52,7 +52,7 @@ function videoError(e) {
         console.log(img);
         $.ajax({
           type: "POST",
-          url: "send.php",
+          url: "http://localhost:5000/",
           data: {"img": img}
         }).done(function( respond ) {
           console.log(respond);
