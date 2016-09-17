@@ -23,12 +23,9 @@
     <div class="navbar-fixed" style="position:float;">
         <nav>
             <div class="nav-wrapper">
-                <a href="#!" class="left brand-logo">Logo</a>
+                <a href="#!" class="left brand-logo"><i class="material-icons">open_in_new</i>Logo</a>
                 <ul class="right">
-                    <li><a href="sass.html"><i class="material-icons">search</i></a></li>
-                    <li><a href="badges.html"><i class="material-icons">view_module</i></a></li>
                     <li><a href="#!"><i class="material-icons">refresh</i></a></li>
-                    <li><a href="mobile.html"><i class="material-icons">more_vert</i></a></li>
                 </ul>
             </div>
         </nav>
@@ -134,7 +131,7 @@
                                 };
                                 $('body').append(
                                     `<div class="bounding-box"
-                              data-url="${detected_url.description}"
+                              data-url="${detected_url.href}"
                               style="position:absolute;
                               top: ${start.y + min_coord.y}px;
                               left: ${start.x + min_coord.x}px;
@@ -143,7 +140,7 @@
                                 );
 
                                 $(document).on('click', '.bounding-box', (event) => {
-                                    window.location = $(event.target).data('url');
+                                    window.location.href = $(event.target).data('url');
                                 });
                             }
                         } else {
