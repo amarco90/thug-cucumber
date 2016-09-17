@@ -67,7 +67,7 @@ class VisionApi:
             responses = request.execute(num_retries=num_retries)
             end = time.time()
             self.logger.info(
-                'Time upload file and get response'.format(end - start))
+                'Time upload file and get response {}'.format(end - start))
             if 'responses' not in responses:
                 return {}
             text_response = {}
