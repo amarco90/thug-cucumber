@@ -1,63 +1,131 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <!--Import Google Icon Font-->
     <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--Import materialize.css-->
-    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+    <link type="text/css" rel="stylesheet" href="/static/css/materialize.css" media="screen,projection" />
+    <link type="text/css" rel="stylesheet" href="/static/css/cucumber.css" media="screen,projection" />
 
     <!--Let browser know website is optimized for mobile-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  </head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="mobile-web-app-capable" content="yes">
+</head>
 
-  <body>
+<body style="overflow: hidden;">
     <!--Import jQuery before materialize.js-->
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-    <script type="text/javascript" src="js/materialize.min.js"></script>
-    Hello
-    <div id="container">
-        <video autoplay="true" id="videoElement">
+    <script type="text/javascript" src="/static/js/materialize.min.js"></script>
 
-        </video>
+    <!-- navigation -->
+    <div class="navbar-fixed" style="position:float;">
+        <nav>
+            <div class="nav-wrapper">
+                <a href="#!" class="left brand-logo">Logo</a>
+                <ul class="right">
+                    <li><a href="sass.html"><i class="material-icons">search</i></a></li>
+                    <li><a href="badges.html"><i class="material-icons">view_module</i></a></li>
+                    <li><a href="#!"><i class="material-icons">refresh</i></a></li>
+                    <li><a href="mobile.html"><i class="material-icons">more_vert</i></a></li>
+                </ul>
+            </div>
+        </nav>
     </div>
-    <button id="snap">Snap Photo</button><br>
-    <img src=""><br>
-<canvas style="display:none;"></canvas>
+
+    <!-- image -->
+    <img id="captured-img" src="">
+    <canvas style="display:none;"></canvas>
+
+    <!-- new picture button -->
+    <div id="content" style="position: fixed; bottom:0px; z-index: 100; width:100%; text-align:center;">
+        <label for="image-picker" class="btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></label>
+        <input id="image-picker" type="file" accept="image/*" capture="camera" style="display:none">
+    </div>
+
     <script>
+        $("#image-picker").change(function(event) {
+            var files = event.target.files;
+            if (files.length > 0) {
+                var FR = new FileReader();
+                FR.onload = function(e) {
+                    var image = document.querySelector('img');
+                    image.src = e.target.result;
+                    var h = $(window).height();
+                    var w = $(window).width();
+                    var deltaH = image.height - h;
+                    var deltaW = image.width - w;
+                    var scale = 0;
+                    if (deltaH > 0 && deltaH > deltaW) {
+                        scale = h / image.height;
+                        image.height = image.height * scale;
+                    } else if (deltaW > 0 && deltaW > deltaH) {
+                        scale = w / image.width;
+                        image.width = image.width * scale;
+                    }
+                    $.ajax({
+                        type: "POST",
+                        url: "http://localhost:5000/",
+                        data: {
+                            "img": image.src
+                        } //,
+                        //dataType: 'json' // FIXME: I have no clue why this is not enough
+                        // (maybe mime type from server?)
+                    }).fail(() => {
+                        console.log('oops, something went wrong with the request');
+                    }).done(function(respond) {
+                        respond = JSON.parse(respond);
+                        console.log(respond);
+                        for (var detected_url of respond) {
+                            var min_coord = {
+                                x: Number.MAX_SAFE_INTEGER,
+                                y: Number.MAX_SAFE_INTEGER
+                            };
+                            var max_coord = {
+                                x: null,
+                                y: null
+                            };
+                            for (var verts of detected_url.boundingPoly.vertices) {
+                                min_coord.x = Math.min(verts.x, min_coord.x);
+                                min_coord.y = Math.min(verts.y, min_coord.y);
+                                max_coord.x = Math.max(verts.x, max_coord.x);
+                                max_coord.y = Math.max(verts.y, max_coord.y);
+                            }
 
-var video = document.querySelector("#videoElement");
-navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.oGetUserMedia;
+                            if (scale !== 0) {
+                                min_coord.x = min_coord.x * scale;
+                                min_coord.y = min_coord.y * scale;
+                                max_coord.x = max_coord.x * scale;
+                                max_coord.y = max_coord.y * scale;
+                            }
 
-if (navigator.getUserMedia) {
-   navigator.getUserMedia({video: true}, handleVideo, videoError);
-}
 
-function handleVideo(stream) {
-   video.src = window.URL.createObjectURL(stream);
-}
+                            var img_offset = $('#captured-img').offset();
+                            var start = {
+                                x: img_offset.left,
+                                y: img_offset.top
+                            };
+                            $('body').append(
+                                `<div class="bounding-box"
+                              data-url="${detected_url.description}"
+                              style="position:absolute;
+                              top: ${start.y + min_coord.y}px;
+                              left: ${start.x + min_coord.x}px;
+                              width: ${max_coord.x - min_coord.x}px;
+                              height: ${max_coord.y - min_coord.y}px;"></div>`
+                            );
 
-function videoError(e) {
-   // do something
-}
-
-// Trigger photo take
-			document.getElementById('snap').addEventListener('click', function() {
-        var canvas = document.querySelector('canvas');
-        canvas.width = 640;
-        canvas.height = 480;
-        var ctx = canvas.getContext('2d');
-				ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        var img = canvas.toDataURL('image/png');
-        document.querySelector('img').src = img;
-        console.log(img);
-        $.ajax({
-          type: "POST",
-          url: "http://localhost:5000/",
-          data: {"img": img}
-        }).done(function( respond ) {
-          console.log(respond);
+                            $(document).on('click', '.bounding-box', (event) => {
+                                window.location = $(event.target).data('url');
+                            });
+                        }
+                    });
+                };
+                FR.readAsDataURL(this.files[0]);
+            }
         });
-			});
     </script>
-  </body>
+</body>
+
 </html>

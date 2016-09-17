@@ -74,12 +74,23 @@ class VisionApi:
                         if 'message' in response['error']
                         else ''))
                 return
+            if len(response) == 0:
+                return {}
             if 'textAnnotations' in response[0]:
                 text_response[input_img] = response[0]['textAnnotations']
             else:
                 text_response[input_img] = []
 
-            response = list(filter(text_filter, text_response[input_img]))
+            text_response = text_response.values()[0][1:] # contains all concatenated text
+            response = list(filter(text_filter, text_response))
+            for elem in response:
+                if elem['description'].startswith('www.'):
+                    elem['description'] = 'http://' + elem['description']
+                elif elem['description'].startswith('@'):
+                    elem['description'] = 'https://twitter.com/' \
+                        + elem['description'][1:]
+                elif '@' in elem['description']:
+                    elem['description'] = 'mailto:' + elem['description']
             return json.dumps(response)
         except errors.HttpError as e:
             print("Http Error for %s: %s" % (input_img, e))
@@ -88,7 +99,9 @@ class VisionApi:
 
 def text_filter(data):
     text = data['description']
-    return text.startswith('http') or text.startswith('www')
+    match = re.search('(https?://)|(www\.)|(^@[^\.]+$)|(^.+@.+\..+)', text,
+        re.IGNORECASE)
+    return bool(match)
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
