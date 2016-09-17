@@ -10,12 +10,14 @@ from flask import (Flask, jsonify, redirect, request, send_from_directory,
 
 from backend.vision_api import VisionApi
 from flask_cors import CORS, cross_origin
+from flask_sslify import SSLify
 
 UPLOAD_FOLDER = '/tmp/uploads/'
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 app = Flask(__name__)
 CORS(app)
+sslify = SSLify(app)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
@@ -66,4 +68,4 @@ def uploaded_file(filename):
 
 if __name__ == "__main__":
     mkdir_p(UPLOAD_FOLDER)
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', debug=False, ssl_context='adhoc')
