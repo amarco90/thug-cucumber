@@ -96,51 +96,56 @@
                         console.log('oops, something went wrong with the request');
                     }).done(function(respond) {
                         document.getElementById("loader").style = "display:none;";
-                        document.getElementById("captured-img").style = "opacity: 1;";
                         respond = JSON.parse(respond);
-                        console.log(respond);
-                        for (var detected_url of respond) {
-                            var min_coord = {
-                                x: Number.MAX_SAFE_INTEGER,
-                                y: Number.MAX_SAFE_INTEGER
-                            };
-                            var max_coord = {
-                                x: null,
-                                y: null
-                            };
-                            for (var verts of detected_url.boundingPoly.vertices) {
-                                min_coord.x = Math.min(verts.x, min_coord.x);
-                                min_coord.y = Math.min(verts.y, min_coord.y);
-                                max_coord.x = Math.max(verts.x, max_coord.x);
-                                max_coord.y = Math.max(verts.y, max_coord.y);
-                            }
+                        if (respond.length > 0) {
+                            document.getElementById("captured-img").style = "opacity: 1;";
+                            console.log(respond);
+                            for (var detected_url of respond) {
+                                var min_coord = {
+                                    x: Number.MAX_SAFE_INTEGER,
+                                    y: Number.MAX_SAFE_INTEGER
+                                };
+                                var max_coord = {
+                                    x: null,
+                                    y: null
+                                };
+                                for (var verts of detected_url.boundingPoly.vertices) {
+                                    min_coord.x = Math.min(verts.x, min_coord.x);
+                                    min_coord.y = Math.min(verts.y, min_coord.y);
+                                    max_coord.x = Math.max(verts.x, max_coord.x);
+                                    max_coord.y = Math.max(verts.y, max_coord.y);
+                                }
 
-                            if (scale !== 0) {
-                                min_coord.x = min_coord.x * scale;
-                                min_coord.y = min_coord.y * scale;
-                                max_coord.x = max_coord.x * scale;
-                                max_coord.y = max_coord.y * scale;
-                            }
+                                if (scale !== 0) {
+                                    min_coord.x = min_coord.x * scale;
+                                    min_coord.y = min_coord.y * scale;
+                                    max_coord.x = max_coord.x * scale;
+                                    max_coord.y = max_coord.y * scale;
+                                }
 
 
-                            var img_offset = $('#captured-img').offset();
-                            var start = {
-                                x: img_offset.left,
-                                y: img_offset.top
-                            };
-                            $('body').append(
-                                `<div class="bounding-box"
+                                var img_offset = $('#captured-img').offset();
+                                var start = {
+                                    x: img_offset.left,
+                                    y: img_offset.top
+                                };
+                                $('body').append(
+                                    `<div class="bounding-box"
                               data-url="${detected_url.description}"
                               style="position:absolute;
                               top: ${start.y + min_coord.y}px;
                               left: ${start.x + min_coord.x}px;
                               width: ${max_coord.x - min_coord.x}px;
                               height: ${max_coord.y - min_coord.y}px;"></div>`
-                            );
+                                );
 
-                            $(document).on('click', '.bounding-box', (event) => {
-                                window.location = $(event.target).data('url');
-                            });
+                                $(document).on('click', '.bounding-box', (event) => {
+                                    window.location = $(event.target).data('url');
+                                });
+                            }
+                        } else {
+                            document.getElementById("startText").innerHTML = "No URL found. Please try again.";
+                            document.getElementById("startText").style = "position:absolute; top:50%; width: 100%; text-align: center; display:block;";
                         }
                     });
                 };
