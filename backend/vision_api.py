@@ -48,7 +48,6 @@ class VisionApi:
             'Prepare and read content locally: {}'.format(end - start))
 
         try:
-            import pdb; pdb.set_trace()
             start = time.time()
             responses = request.execute(num_retries=num_retries)
             end = time.time()
