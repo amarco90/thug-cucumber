@@ -10,6 +10,10 @@ class Filtering:
         return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
     @staticmethod
+    def get_rgb_scale_gray(image):
+        return cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+
+    @staticmethod
     def apply_box_filter(image, n=3):
         box = np.ones((n, n), np.float32) / (n * n)
 
