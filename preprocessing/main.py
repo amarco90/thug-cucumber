@@ -8,7 +8,7 @@ from modules.Filtering import *
 
 def main():
     images = ["assets/IMG_2560.jpg", "assets/IMG_0258.jpg", "assets/IMG_0257.jpg", "assets/IMG_0256.jpg",
-              "assets/IMG_0253.jpg", "assets/IMG_20160916_220816.jpg"]
+              "assets/IMG_0253.jpg"]
 
     for image_path in images:
         get_url_segment(image_path)
@@ -17,7 +17,7 @@ def main():
 def get_url_segment(image_path):
     original_image = Utils.get_image(image_path)
 
-    kernels = ["assets/kernel.png", "assets/kernel2.png", "assets/kernel3.png"]
+    kernels = ["assets/kernel.png"]
 
     result = search_for_template(original_image, kernels)
     if result is None:
@@ -55,7 +55,7 @@ def search_for_template(original_image, kernels, use_negative=False):
     return None
 
 
-def detect_url(original_image, template, score_threshold=0.4, to_show=False):
+def detect_url(original_image, template, score_threshold=0.4, to_extract=True, to_show=False):
     template_width, template_height = template.shape[::-1]
 
     color_image = np.copy(original_image)
@@ -93,8 +93,11 @@ def detect_url(original_image, template, score_threshold=0.4, to_show=False):
     end_x = result_width - sample_width
     end_y = best_candidate[1][1] + (sample_height / 2)
 
-    resulting_img = np.zeros((result_height, result_width), np.float32)
-    resulting_img[start_y:end_y, start_x:end_x] = result[start_y:end_y, start_x:end_x]
+    if to_extract:
+        resulting_img = result[start_y:end_y, start_x:end_x]
+    else:
+        resulting_img = np.zeros((result_height, result_width), np.float32)
+        resulting_img[start_y:end_y, start_x:end_x] = result[start_y:end_y, start_x:end_x]
 
     if to_show:
         image_to_show = np.copy(original_image)
