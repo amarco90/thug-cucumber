@@ -34,12 +34,29 @@
         </nav>
     </div>
 
-    <!-- image -->
-    <img id="captured-img" src="">
-    <canvas style="display:none;"></canvas>
+    <div id="content" class="valign-wrapper">
+        <h5 id="startText" class="valign" style="position:absolute; top:50%; width: 100%; text-align: center;">Try scanning... 😏</h5>
+        <!-- image -->
+        <img id="captured-img" src="">
+        <canvas style="display:none;"></canvas>
+
+        <div id="loader" class="preloader-wrapper big active" style="display:none;">
+            <div class="spinner-layer spinner-blue-only">
+                <div class="circle-clipper left">
+                    <div class="circle"></div>
+                </div>
+                <div class="gap-patch">
+                    <div class="circle"></div>
+                </div>
+                <div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- new picture button -->
-    <div id="content" style="position: fixed; bottom:0px; z-index: 100; width:100%; text-align:center;">
+    <div style="position: fixed; bottom:0px; z-index: 100; width:100%; text-align:center;">
         <label for="image-picker" class="btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></label>
         <input id="image-picker" type="file" accept="image/*" capture="camera" style="display:none">
     </div>
@@ -50,6 +67,8 @@
             if (files.length > 0) {
                 var FR = new FileReader();
                 FR.onload = function(e) {
+                    document.getElementById("startText").style = "display:none;";
+                    document.getElementById("captured-img").style = "opacity: 0.5;";
                     var image = document.querySelector('img');
                     image.src = e.target.result;
                     var h = $(window).height();
@@ -64,6 +83,7 @@
                         scale = w / image.width;
                         image.width = image.width * scale;
                     }
+                    document.getElementById("loader").style = "display:visible; position: absolute; top: 40%; left: 40%;";
                     $.ajax({
                         type: "POST",
                         url: "http://localhost:5000/",
@@ -73,6 +93,8 @@
                         //dataType: 'json' // FIXME: I have no clue why this is not enough
                         // (maybe mime type from server?)
                     }).done(function(respond) {
+                        document.getElementById("loader").style = "display:none;";
+                        document.getElementById("captured-img").style = "opacity: 1;";
                         respond = JSON.parse(respond);
                         console.log(respond);
                         for (var detected_url of respond) {
