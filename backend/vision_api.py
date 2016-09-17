@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import time
+import re
 
 from googleapiclient import discovery
 from googleapiclient import errors
@@ -25,17 +26,25 @@ class VisionApi:
             'vision', 'v1', credentials=self.credentials,
             discoveryServiceUrl=DISCOVERY_URL)
 
-    def detect_text(self, input_img, num_retries=1, max_results=6):
+    def detect_text(self, input_img=None, base64_str=None, num_retries=1, max_results=6):
         """Uses the Vision API to detect text in the given file.
         """
+        if input_img is None and base64_str is None:
+            self.logger.error('One of input_img or base64_str needs to be '
+                              'specified')
+            return {}
         start = time.time()
-        with open(input_img, 'rb') as image_file:
-            input_img_cont = image_file.read()
-
         batch_request = []
+        if base64_str is None:
+            with open(input_img, 'rb') as image_file:
+                input_img_cont = image_file.read()
+            content = base64.b64encode(input_img_cont).decode('UTF-8')
+        else:
+            content = re.sub('^data:image/.+;base64,', '',base64_str)
+
         batch_request.append({
             'image': {
-                'content': base64.b64encode(input_img_cont).decode('UTF-8')
+                'content': content,
             },
             'features': [{
                 'type': 'TEXT_DETECTION',
@@ -70,14 +79,16 @@ class VisionApi:
             else:
                 text_response[input_img] = []
 
-            response = [elem for elem in text_response[input_img] if \
-                elem['description'].startswith('http')]
+            response = list(filter(text_filter, text_response[input_img]))
             return json.dumps(response)
         except errors.HttpError as e:
             print("Http Error for %s: %s" % (input_img, e))
         except KeyError as e2:
             print("Key error: %s" % e2)
 
+def text_filter(data):
+    text = data['description']
+    return text.startswith('http') or text.startswith('www')
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:

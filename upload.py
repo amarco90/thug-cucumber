@@ -5,9 +5,10 @@ import errno
 import json
 import os
 
-from flask import (Flask, flash, jsonify, redirect, request,
-                   send_from_directory, url_for)
-from werkzeug.utils import secure_filename
+from flask import (Flask, jsonify, redirect, request, send_from_directory,
+                   url_for)
+
+from backend.vision_api import VisionApi
 
 UPLOAD_FOLDER = '/tmp/uploads/'
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
@@ -35,7 +36,11 @@ def allowed_file(filename):
 def upload_file():
     if request.method == 'POST':
         img = request.form['img']
-        return "Received Image of Size %d" % len(img)
+        vision = VisionApi()
+        print("Received Image of Size %d" % len(img))
+        response = vision.detect_text(base64_str=img)
+        print response
+        return response
 
     return app.send_static_file('index.html')
 
