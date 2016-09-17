@@ -4,12 +4,12 @@ import base64
 import json
 import logging
 import os
+import re
 import sys
 import time
-import re
 
-from googleapiclient import discovery
-from googleapiclient import errors
+import bleach
+from googleapiclient import discovery, errors
 from oauth2client.client import GoogleCredentials
 
 DISCOVERY_URL = 'https://{api}.googleapis.com/$discovery/rest?version={apiVersion}'
@@ -26,7 +26,12 @@ class VisionApi:
             'vision', 'v1', credentials=self.credentials,
             discoveryServiceUrl=DISCOVERY_URL)
 
-    def detect_text(self, input_img=None, base64_str=None, num_retries=1, max_results=6):
+    def detect_text(
+            self,
+            input_img=None,
+            base64_str=None,
+            num_retries=1,
+            max_results=6):
         """Uses the Vision API to detect text in the given file.
         """
         if input_img is None and base64_str is None:
@@ -40,7 +45,7 @@ class VisionApi:
                 input_img_cont = image_file.read()
             content = base64.b64encode(input_img_cont).decode('UTF-8')
         else:
-            content = re.sub('^data:image/.+;base64,', '',base64_str)
+            content = re.sub('^data:image/.+;base64,', '', base64_str)
 
         batch_request.append({
             'image': {
@@ -69,10 +74,10 @@ class VisionApi:
             response = responses['responses']
             if 'error' in response:
                 print("API Error for %s: %s" % (
-                        input_img,
-                        response['error']['message']
-                        if 'message' in response['error']
-                        else ''))
+                    input_img,
+                    response['error']['message']
+                    if 'message' in response['error']
+                    else ''))
                 return
             if len(response) == 0:
                 return {}
@@ -81,26 +86,35 @@ class VisionApi:
             else:
                 text_response[input_img] = []
 
-            text_response = text_response.values()[0][1:] # contains all concatenated text
-            response = list(filter(text_filter, text_response))
-            for elem in response:
-                if elem['description'].startswith('www.'):
-                    elem['description'] = 'http://' + elem['description']
-                elif elem['description'].startswith('@'):
-                    elem['description'] = 'https://twitter.com/' \
-                        + elem['description'][1:]
-                elif '@' in elem['description']:
-                    elem['description'] = 'mailto:' + elem['description']
+            hrefs = []
+
+            def get_href(attrs, new=False):
+                hrefs.append(attrs['href'])
+                return bleach.callbacks.nofollow(attrs, new)
+
+            # contains all concatenated text
+            text_response = text_response.values()[0][1:]
+            response = []
+            for resp in text_response:
+                desc = resp['description']
+                link_desc = bleach.linkify(desc, [get_href])
+                if link_desc != desc:
+                    href = hrefs[-1]
+                    print href
+                    resp['href'] = href
+                    response.append(resp)
+
             return json.dumps(response)
         except errors.HttpError as e:
             print("Http Error for %s: %s" % (input_img, e))
         except KeyError as e2:
             print("Key error: %s" % e2)
 
+
 def text_filter(data):
     text = data['description']
     match = re.search('(https?://)|(www\.)|(^@[^\.]+$)|(^.+@.+\..+)', text,
-        re.IGNORECASE)
+                      re.IGNORECASE)
     return bool(match)
 
 if __name__ == '__main__':
