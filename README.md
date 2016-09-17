@@ -1,8 +1,14 @@
 # thug-cucumber
-Hackzurich 2016
-URL detection to make urls in pictures clickable
+Enable clickable URLs, emails addresses, and phone numbers in pictures
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.txt)
+
+<img src="thug-cucumber.jpg?raw=true" height="120" align="right"/>
+
 
 # Contributors
+Implemented during Hackzurich 2016 by:
+
 * Jan Wilken Dörrie
 * Dina Zverinski
 * Álvaro Marco
