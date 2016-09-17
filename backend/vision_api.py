@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import base64
+import json
 import logging
 import os
 import sys
@@ -56,21 +57,24 @@ class VisionApi:
             if 'responses' not in responses:
                 return {}
             text_response = {}
-            for filename, response in zip(input_img, responses['responses']):
-                if 'error' in response:
-                    print("API Error for %s: %s" % (
-                            filename,
-                            response['error']['message']
-                            if 'message' in response['error']
-                            else ''))
-                    continue
-                if 'textAnnotations' in response:
-                    text_response[filename] = response['textAnnotations']
-                else:
-                    text_response[filename] = []
-            return text_response
+            response = responses['responses']
+            if 'error' in response:
+                print("API Error for %s: %s" % (
+                        input_img,
+                        response['error']['message']
+                        if 'message' in response['error']
+                        else ''))
+                return
+            if 'textAnnotations' in response[0]:
+                text_response[input_img] = response[0]['textAnnotations']
+            else:
+                text_response[input_img] = []
+
+            response = [elem for elem in text_response[input_img] if \
+                elem['description'].startswith('http')]
+            return json.dumps(response)
         except errors.HttpError as e:
-            print("Http Error for %s: %s" % (filename, e))
+            print("Http Error for %s: %s" % (input_img, e))
         except KeyError as e2:
             print("Key error: %s" % e2)
 
@@ -82,4 +86,4 @@ if __name__ == '__main__':
     input_img = sys.argv[1]
 
     vision = VisionApi()
-    text_response = vision.detect_text(input_img)
+    response = vision.detect_text(input_img)
