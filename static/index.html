@@ -25,7 +25,7 @@
             <div class="nav-wrapper">
                 <a href="#!" class="left brand-logo"><i class="material-icons">open_in_new</i>Logo</a>
                 <ul class="right">
-                    <li><a href="#!"><i class="material-icons">refresh</i></a></li>
+                    <li><a id="refresh" href="#!"><i class="material-icons">refresh</i></a></li>
                 </ul>
             </div>
         </nav>
@@ -59,6 +59,10 @@
     </div>
 
     <script>
+        $('#refresh').on('click', () => {
+            window.location.reload();
+        });
+
         $("#image-picker").change(function(event) {
             $('.bounding-box').each(function(index) {
                 $(this).remove();
