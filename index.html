@@ -47,7 +47,7 @@ function videoError(e) {
         canvas.height = 480;
         var ctx = canvas.getContext('2d');
 				ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        var img = canvas.toDataURL('image/png')
+        var img = canvas.toDataURL('image/png');
         document.querySelector('img').src = img;
         console.log(img);
         $.ajax({
