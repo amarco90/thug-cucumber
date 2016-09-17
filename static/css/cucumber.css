@@ -1,0 +1,5 @@
+.bounding-box {
+    border: 5px solid red;
+    cursor:pointer;
+    z-index: 5;
+}
