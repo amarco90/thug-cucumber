@@ -1,5 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import base64
+import errno
 import json
 import os
 
@@ -12,6 +14,16 @@ ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 
 def allowed_file(filename):
@@ -35,8 +47,7 @@ def upload_file():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('uploaded_file',
-                                    filename=filename))
+            return redirect(url_for('uploaded_file', filename=filename))
     return '''
     <!doctype html>
     <title>Upload new File</title>
@@ -48,11 +59,23 @@ def upload_file():
     '''
 
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
+@app.route('/base64/<filename>')
+def get_base64(filename):
+    with open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'rb') as image:
+        encoded_string = base64.b64encode(image.read())
+        return encoded_string
+
+
+@app.route('/ml_json/')
+def ml_json():
     with open('./static/mock_data.json') as mock_data:
         return jsonify(json.load(mock_data))
 
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 if __name__ == "__main__":
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    mkdir_p(UPLOAD_FOLDER)
     app.run()
