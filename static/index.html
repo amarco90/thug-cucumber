@@ -35,7 +35,6 @@
     </div>
 
     <div id="content" class="valign-wrapper">
-        <!-- <a href="intent:1#Intent;scheme=tel;end">Call </a> -->
         <h5 id="startText" class="valign" style="position:absolute; top:50%; width: 100%; text-align: center;">Try scanning... 😏</h5>
         <!-- image -->
         <img id="captured-img" src="">
@@ -64,6 +63,9 @@
 
     <script>
         $("#image-picker").change(function(event) {
+            $('.bounding-box').each(function(index) {
+                $(this).remove();
+            });
             var files = event.target.files;
             if (files.length > 0) {
                 var FR = new FileReader();
@@ -145,7 +147,7 @@
                                 });
                             }
                         } else {
-                            document.getElementById("startText").innerHTML = "No URL found. Please try again.";
+                            document.getElementById("startText").innerHTML = "No URL found. Please try again 🙄";
                             document.getElementById("startText").style = "position:absolute; top:50%; width: 100%; text-align: center; display:block;";
                         }
                     });
