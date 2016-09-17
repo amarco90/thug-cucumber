@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--Import Google Icon Font-->
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  </head>
+
+  <body>
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    Hello
+    <div id="container">
+        <video autoplay="true" id="videoElement">
+
+        </video>
+    </div>
+    <button id="snap">Snap Photo</button><br>
+    <img src=""><br>
+<canvas style="display:none;"></canvas>
+    <script>
+
+var video = document.querySelector("#videoElement");
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.oGetUserMedia;
+
+if (navigator.getUserMedia) {
+   navigator.getUserMedia({video: true}, handleVideo, videoError);
+}
+
+function handleVideo(stream) {
+   video.src = window.URL.createObjectURL(stream);
+}
+
+function videoError(e) {
+   // do something
+}
+
+// Trigger photo take
+			document.getElementById('snap').addEventListener('click', function() {
+        var canvas = document.querySelector('canvas');
+        canvas.width = 640;
+        canvas.height = 480;
+        var ctx = canvas.getContext('2d');
+				ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var img = canvas.toDataURL('image/png');
+        document.querySelector('img').src = img;
+        console.log(img);
+        $.ajax({
+          type: "POST",
+          url: "http://localhost:5000/",
+          data: {"img": img}
+        }).done(function( respond ) {
+          console.log(respond);
+        });
+			});
+    </script>
+  </body>
+</html>
