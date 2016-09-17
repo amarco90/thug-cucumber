@@ -103,6 +103,12 @@ class VisionApi:
                     print href
                     resp['href'] = href
                     response.append(resp)
+                else:
+                    match = filter_email(desc)
+                    if match:
+                        resp['href'] = 'mailto:' + match.group(0)
+                        print(resp['href'])
+                        response.append(resp)
 
             return json.dumps(response)
         except errors.HttpError as e:
@@ -111,11 +117,9 @@ class VisionApi:
             print("Key error: %s" % e2)
 
 
-def text_filter(data):
-    text = data['description']
-    match = re.search('(https?://)|(www\.)|(^@[^\.]+$)|(^.+@.+\..+)', text,
-                      re.IGNORECASE)
-    return bool(match)
+def filter_email(text):
+    match = re.search('(\S+@\S+\.\S+)', text, re.IGNORECASE)
+    return match
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
