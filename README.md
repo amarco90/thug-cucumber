@@ -1,6 +1,6 @@
 # thug-cucumber
 
-<img src="thug-cumcumber.jpg?raw=true" height="120" align="right"/>
+<img src="thug-cumcumber.png?raw=true" height="120" align="right"/>
 
 Enable clickable URLs, emails addresses, and phone numbers in pictures
 
