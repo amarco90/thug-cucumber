@@ -23,7 +23,7 @@
     <div class="navbar-fixed" style="position:float;">
         <nav>
             <div class="nav-wrapper green darken-1">
-                <a href="#!" class="left brand-logo"><i class="material-icons">open_in_new</i>Cucumber</a>
+                <a href="#!" class="left brand-logo"><img src="/static/thug-cumcumber.png" style="width:25px" /> Cucumber</a>
                 <ul class="right">
                     <li><a id="refresh" href="#!"><i class="material-icons">refresh</i></a></li>
                 </ul>
@@ -72,7 +72,7 @@
                     FR.onload = function(e) {
                         document.getElementById("startText").style = "display:none;";
                         document.getElementById("captured-img").style = "opacity: 0.5;";
-                        var image = document.querySelector('img');
+                        var image = document.getElementById('captured-img');
                         image.src = e.target.result;
                         var h = $(window).height();
                         var w = $(window).width();
@@ -143,7 +143,10 @@
                                     );
 
                                     $(document).on('click', '.bounding-box', (event) => {
-                                        window.location.href = $(event.target).data('url');
+                                        // open in new tab
+                                        window.open(
+                                            $(event.target).data('url'),
+                                            '_blank');
                                     });
                                 }
                             } else {

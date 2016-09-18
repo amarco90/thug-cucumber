@@ -115,6 +115,8 @@ class VisionApi:
             print entity_tuples
             # print entities
             text_response = text_response.values()[0][1:]
+            # END OF TOKENS
+            text_response.append({'description': ''})
             response = []
             telephone = ""
             start_telephone_box = None
