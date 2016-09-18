@@ -40,7 +40,6 @@ def allowed_file(filename):
 def upload_file():
     if request.method == 'POST':
         img = request.form['img']
-        print img
         # img = Preprocessing.preprocess(img)
 
         vision = VisionApi()
