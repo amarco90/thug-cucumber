@@ -1,6 +1,6 @@
 # thug-cucumber
 
-<img src="thug-cumcumber.jpg?raw=true" height="120" align="right"/>
+<img src="thug-cumcumber.png?raw=true" height="120" align="right"/>
 
 Enable clickable URLs, emails addresses, and phone numbers in pictures
 
@@ -8,7 +8,7 @@ Enable clickable URLs, emails addresses, and phone numbers in pictures
 
 # Description
 
-The user takes a picture with her smartphone, links present in the image are extracted and overlaid on top of the picture; allowing the user to click them.
+The user takes a picture with her smartphone, links/email addresses/telephone numbers/entities present in the image are extracted and made clickable right from the picture; allowing the user to click them (opening them in the browser/email app/phone app).
 
 The project uses the [Vision API](https://cloud.google.com/vision/) from [Google Cloud Machine Learning](https://cloud.google.com/ml/) to perform character recognition on pictures.
 
