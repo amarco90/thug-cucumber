@@ -8,6 +8,9 @@ import re
 import sys
 import time
 
+import httplib2
+from collections import namedtuple
+
 import bleach
 from googleapiclient import discovery, errors
 from oauth2client.client import GoogleCredentials
@@ -20,6 +23,7 @@ class VisionApi:
     """Construct and use the Google Vision API service."""
 
     def __init__(self, api_discovery_file='vision_api.json'):
+        self.text_analyzer = TextAnalyzer()
         self.logger = logging.getLogger()
         self.credentials = GoogleCredentials.get_application_default()
         self.service = discovery.build(
@@ -93,10 +97,32 @@ class VisionApi:
                 return bleach.callbacks.nofollow(attrs, new)
 
             # contains all concatenated text
+            full_text = text_response.values()[0][0]['description']
+
+            Entity = namedtuple('Entity', ['salience', 'name', 'wikipedia_url'])
+
+            entities = self.text_analyzer.nl_detect(full_text)
+            entity_tuples = []
+            for entity in entities:
+                salience = entity['salience']
+                name = entity['name'].lower()
+                wikipedia_url = entity['metadata'].get('wikipedia_url')
+
+                if wikipedia_url:
+                    entity_tuples.append(Entity(salience, name, wikipedia_url))
+
+            entity_tuples.sort(reverse=True)
+            print entity_tuples
+            # print entities
             text_response = text_response.values()[0][1:]
             response = []
             for resp in text_response:
                 desc = resp['description']
+                for ent in entity_tuples:
+                    if desc.lower() in ent.name:
+                        resp['href'] = ent.wikipedia_url
+                        response.append(resp)
+                        continue
                 link_desc = bleach.linkify(desc, [get_href])
                 if link_desc != desc:
                     href = hrefs[-1]
@@ -115,6 +141,60 @@ class VisionApi:
             print("Http Error for %s: %s" % (input_img, e))
         except KeyError as e2:
             print("Key error: %s" % e2)
+
+
+class TextAnalyzer(object):
+    """Construct and use the Google Natural Language API service."""
+
+    def __init__(self, db_filename=None):
+        credentials = GoogleCredentials.get_application_default()
+        scoped_credentials = credentials.create_scoped(
+            ['https://www.googleapis.com/auth/cloud-platform'])
+        http = httplib2.Http()
+        scoped_credentials.authorize(http)
+        self.service = discovery.build('language', 'v1beta1', http=http)
+
+        # This list will store the entity information gleaned from the
+        # image files.
+        self.entity_info = []
+
+    def _get_native_encoding_type(self):
+        """Returns the encoding type that matches Python's native strings."""
+        if sys.maxunicode == 65535:
+            return 'UTF16'
+        else:
+            return 'UTF32'
+
+    def nl_detect(self, text):
+        """Use the Natural Language API to analyze the given text string."""
+        # We're only requesting 'entity' information from the Natural Language
+        # API at this time.
+        body = {
+            'document': {
+                'type': 'PLAIN_TEXT',
+                'content': text,
+            },
+            'encodingType': self._get_native_encoding_type(),
+        }
+        entities = []
+        try:
+            request = self.service.documents().analyzeEntities(body=body)
+            response = request.execute()
+            entities = response['entities']
+        except errors.HttpError as e:
+            logging.error('Http Error: %s' % e)
+        except KeyError as e2:
+            logging.error('Key error: %s' % e2)
+        return entities
+
+    def extract_entity_info(self, entity):
+        """Extract information about an entity."""
+        type = entity['type']
+        name = entity['name'].lower()
+        metadata = entity['metadata']
+        salience = entity['salience']
+        wiki_url = metadata.get('wikipedia_url', None)
+        return (type, name, salience, wiki_url)
 
 
 def filter_email(text):
