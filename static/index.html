@@ -72,7 +72,7 @@
                     FR.onload = function(e) {
                         document.getElementById("startText").style = "display:none;";
                         document.getElementById("captured-img").style = "opacity: 0.5;";
-                        var image = document.querySelector('img');
+                        var image = document.getElementById('captured-img');
                         image.src = e.target.result;
                         var h = $(window).height();
                         var w = $(window).width();
@@ -145,8 +145,8 @@
                                     $(document).on('click', '.bounding-box', (event) => {
                                         // open in new tab
                                         window.open(
-                                           $(event.target).data('url'),
-                                          '_blank');
+                                            $(event.target).data('url'),
+                                            '_blank');
                                     });
                                 }
                             } else {
