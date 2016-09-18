@@ -95,8 +95,25 @@ class VisionApi:
             # contains all concatenated text
             text_response = text_response.values()[0][1:]
             response = []
+            telephone = ""
+            start_telephone_box = None
+            end_telephone_box = None
             for resp in text_response:
                 desc = resp['description']
+                if telephone:
+                    match = filter_telephone_cont(desc)
+                    if match:
+                        end_telephone_box = resp['boundingPoly']
+                        telephone += match.group(0)
+                        continue
+                    else:
+                        phone = process_telephone(telephone, start_telephone_box, end_telephone_box)
+                        if phone:
+                            response.append(phone)
+                        telephone = ''
+                        start_telephone_box = None
+                        end_telephone_box = None
+
                 link_desc = bleach.linkify(desc, [get_href])
                 if link_desc != desc:
                     href = hrefs[-1]
@@ -109,6 +126,11 @@ class VisionApi:
                         resp['href'] = 'mailto:' + match.group(0)
                         print(resp['href'])
                         response.append(resp)
+                    else:
+                        match = filter_telephone_start(desc)
+                        if (match):
+                            telephone += match.group(0)
+                            start_telephone_box = resp['boundingPoly']
 
             return json.dumps(response)
         except errors.HttpError as e:
@@ -120,6 +142,38 @@ class VisionApi:
 def filter_email(text):
     match = re.search('(\S+@\S+\.\S+)', text, re.IGNORECASE)
     return match
+
+def filter_telephone_start(text):
+    match = re.match('\+[0-9]*', text)
+    return match
+
+def filter_telephone_cont(text):
+    match = re.match('[0-9]+', text)
+    return match
+
+def process_telephone(telephone, start_box, end_box):
+    result = {}
+    if len(telephone) > 4:
+        result['href'] = "intent:" + telephone + "#Intent;scheme=tel;end"
+        minX = float("inf")
+        maxX = float("-inf")
+        minY = float("inf")
+        maxY = float("-inf")
+        all_vertices = start_box["vertices"] + end_box["vertices"]
+        for vertex in all_vertices:
+            minX = min(minX, vertex["x"])
+            maxX = max(maxX, vertex["x"])
+            minY = min(minY, vertex["y"])
+            maxY = max(maxY, vertex["y"])
+
+        result["boundingPoly"] = {"vertices": [
+            {"x": minX, "y": minY},
+            {"x": maxX, "y": minY},
+            {"x": minX, "y": maxY},
+            {"x": maxX, "y": maxY},
+        ]}
+
+    return result
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
