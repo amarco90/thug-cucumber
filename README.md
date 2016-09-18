@@ -1,6 +1,6 @@
 # thug-cucumber
 
-<img src="thug-cumcumber.png?raw=true" height="120" align="right"/>
+<img src="static/thug-cumcumber.png?raw=true" height="120" align="right"/>
 
 *Project Deep-Link by team thug-cucumber*
 
