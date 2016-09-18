@@ -143,7 +143,10 @@
                                     );
 
                                     $(document).on('click', '.bounding-box', (event) => {
-                                        window.location.href = $(event.target).data('url');
+                                        // open in new tab
+                                        window.open(
+                                           $(event.target).data('url'),
+                                          '_blank');
                                     });
                                 }
                             } else {
