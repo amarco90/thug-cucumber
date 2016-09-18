@@ -8,6 +8,9 @@ import re
 import sys
 import time
 
+import httplib2
+from collections import namedtuple
+
 import bleach
 from googleapiclient import discovery, errors
 from oauth2client.client import GoogleCredentials
@@ -20,6 +23,7 @@ class VisionApi:
     """Construct and use the Google Vision API service."""
 
     def __init__(self, api_discovery_file='vision_api.json'):
+        self.text_analyzer = TextAnalyzer()
         self.logger = logging.getLogger()
         self.credentials = GoogleCredentials.get_application_default()
         self.service = discovery.build(
@@ -67,7 +71,7 @@ class VisionApi:
             responses = request.execute(num_retries=num_retries)
             end = time.time()
             self.logger.info(
-                'Time upload file and get response'.format(end - start))
+                'Time upload file and get response {}'.format(end - start))
             if 'responses' not in responses:
                 return {}
             text_response = {}
@@ -93,16 +97,72 @@ class VisionApi:
                 return bleach.callbacks.nofollow(attrs, new)
 
             # contains all concatenated text
+            full_text = text_response.values()[0][0]['description']
+
+            Entity = namedtuple('Entity', ['salience', 'name', 'wikipedia_url'])
+
+            entities = self.text_analyzer.nl_detect(full_text)
+            entity_tuples = []
+            for entity in entities:
+                salience = entity['salience']
+                name = entity['name'].lower()
+                wikipedia_url = entity['metadata'].get('wikipedia_url')
+
+                if wikipedia_url:
+                    entity_tuples.append(Entity(salience, name, wikipedia_url))
+
+            entity_tuples.sort(reverse=True)
+            print entity_tuples
+            # print entities
             text_response = text_response.values()[0][1:]
             response = []
+            telephone = ""
+            start_telephone_box = None
+            end_telephone_box = None
             for resp in text_response:
                 desc = resp['description']
+                # Link Entities
+                for ent in entity_tuples:
+                    if desc.lower() in ent.name:
+                        resp['href'] = ent.wikipedia_url
+                        response.append(resp)
+                        continue
+
+                # Find Telephone
+                if telephone:
+                    match = filter_telephone_cont(desc)
+                    if match:
+                        end_telephone_box = resp['boundingPoly']
+                        telephone += match.group(0)
+                        continue
+                    else:
+                        phone = process_telephone(telephone, start_telephone_box, end_telephone_box)
+                        if phone:
+                            response.append(phone)
+                        telephone = ''
+                        start_telephone_box = None
+                        end_telephone_box = None
+
                 link_desc = bleach.linkify(desc, [get_href])
+                # Add Hyperlinks
                 if link_desc != desc:
                     href = hrefs[-1]
                     print href
                     resp['href'] = href
                     response.append(resp)
+
+                # Add email addresses
+                else:
+                    match = filter_email(desc)
+                    if match:
+                        resp['href'] = 'mailto:' + match.group(0)
+                        print(resp['href'])
+                        response.append(resp)
+                    else:
+                        match = filter_telephone_start(desc)
+                        if (match):
+                            telephone += match.group(0)
+                            start_telephone_box = resp['boundingPoly']
 
             return json.dumps(response)
         except errors.HttpError as e:
@@ -111,11 +171,95 @@ class VisionApi:
             print("Key error: %s" % e2)
 
 
-def text_filter(data):
-    text = data['description']
-    match = re.search('(https?://)|(www\.)|(^@[^\.]+$)|(^.+@.+\..+)', text,
-                      re.IGNORECASE)
-    return bool(match)
+class TextAnalyzer(object):
+    """Construct and use the Google Natural Language API service."""
+
+    def __init__(self, db_filename=None):
+        credentials = GoogleCredentials.get_application_default()
+        scoped_credentials = credentials.create_scoped(
+            ['https://www.googleapis.com/auth/cloud-platform'])
+        http = httplib2.Http()
+        scoped_credentials.authorize(http)
+        self.service = discovery.build('language', 'v1beta1', http=http)
+
+        # This list will store the entity information gleaned from the
+        # image files.
+        self.entity_info = []
+
+    def _get_native_encoding_type(self):
+        """Returns the encoding type that matches Python's native strings."""
+        if sys.maxunicode == 65535:
+            return 'UTF16'
+        else:
+            return 'UTF32'
+
+    def nl_detect(self, text):
+        """Use the Natural Language API to analyze the given text string."""
+        # We're only requesting 'entity' information from the Natural Language
+        # API at this time.
+        body = {
+            'document': {
+                'type': 'PLAIN_TEXT',
+                'content': text,
+            },
+            'encodingType': self._get_native_encoding_type(),
+        }
+        entities = []
+        try:
+            request = self.service.documents().analyzeEntities(body=body)
+            response = request.execute()
+            entities = response['entities']
+        except errors.HttpError as e:
+            logging.error('Http Error: %s' % e)
+        except KeyError as e2:
+            logging.error('Key error: %s' % e2)
+        return entities
+
+    def extract_entity_info(self, entity):
+        """Extract information about an entity."""
+        type = entity['type']
+        name = entity['name'].lower()
+        metadata = entity['metadata']
+        salience = entity['salience']
+        wiki_url = metadata.get('wikipedia_url', None)
+        return (type, name, salience, wiki_url)
+
+
+def filter_email(text):
+    match = re.search('(\S+@\S+\.\S+)', text, re.IGNORECASE)
+    return match
+
+def filter_telephone_start(text):
+    match = re.match('\+[0-9]*', text)
+    return match
+
+def filter_telephone_cont(text):
+    match = re.match('[0-9]+', text)
+    return match
+
+def process_telephone(telephone, start_box, end_box):
+    result = {}
+    if len(telephone) > 4:
+        result['href'] = "intent:" + telephone + "#Intent;scheme=tel;end"
+        minX = float("inf")
+        maxX = float("-inf")
+        minY = float("inf")
+        maxY = float("-inf")
+        all_vertices = start_box["vertices"] + end_box["vertices"]
+        for vertex in all_vertices:
+            minX = min(minX, vertex["x"])
+            maxX = max(maxX, vertex["x"])
+            minY = min(minY, vertex["y"])
+            maxY = max(maxY, vertex["y"])
+
+        result["boundingPoly"] = {"vertices": [
+            {"x": minX, "y": minY},
+            {"x": maxX, "y": minY},
+            {"x": minX, "y": maxY},
+            {"x": maxX, "y": maxY},
+        ]}
+
+    return result
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:

@@ -22,10 +22,10 @@
     <!-- navigation -->
     <div class="navbar-fixed" style="position:float;">
         <nav>
-            <div class="nav-wrapper">
-                <a href="#!" class="left brand-logo"><i class="material-icons">open_in_new</i>Logo</a>
+            <div class="nav-wrapper green darken-1">
+                <a href="#!" class="left brand-logo"><i class="material-icons">open_in_new</i>Cucumber</a>
                 <ul class="right">
-                    <li><a href="#!"><i class="material-icons">refresh</i></a></li>
+                    <li><a id="refresh" href="#!"><i class="material-icons">refresh</i></a></li>
                 </ul>
             </div>
         </nav>
@@ -38,7 +38,7 @@
         <canvas style="display:none;"></canvas>
 
         <div id="loader" class="preloader-wrapper big active" style="display:none;">
-            <div class="spinner-layer spinner-blue-only">
+            <div class="spinner-layer spinner-blue">
                 <div class="circle-clipper left">
                     <div class="circle"></div>
                 </div>
@@ -50,109 +50,112 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- new picture button -->
-    <div style="position: fixed; bottom:0px; z-index: 100; width:100%; text-align:center;">
-        <label for="image-picker" class="btn-floating btn-large waves-effect waves-light red"><i class="material-icons">add</i></label>
-        <input id="image-picker" type="file" accept="image/*" capture="camera" style="display:none">
-    </div>
+        <!-- new picture button -->
+        <div style="position: fixed; bottom:0px; z-index: 100; width:100%; text-align:center;">
+            <label for="image-picker" class="btn-floating btn-large waves-effect waves-light green darken-1"><i class="material-icons">add</i></label>
+            <input id="image-picker" type="file" accept="image/*" capture="camera" style="display:none">
+        </div>
 
-    <script>
-        $("#image-picker").change(function(event) {
-            $('.bounding-box').each(function(index) {
-                $(this).remove();
+        <script>
+            $('#refresh').on('click', () => {
+                window.location.reload();
             });
-            var files = event.target.files;
-            if (files.length > 0) {
-                var FR = new FileReader();
-                FR.onload = function(e) {
-                    document.getElementById("startText").style = "display:none;";
-                    document.getElementById("captured-img").style = "opacity: 0.5;";
-                    var image = document.querySelector('img');
-                    image.src = e.target.result;
-                    var h = $(window).height();
-                    var w = $(window).width();
-                    var deltaH = image.height - h;
-                    var deltaW = image.width - w;
-                    var scale = 0;
-                    if (deltaH > 0 && deltaH > deltaW) {
-                        scale = h / image.height;
-                        image.height = image.height * scale;
-                    } else if (deltaW > 0 && deltaW > deltaH) {
-                        scale = w / image.width;
-                        image.width = image.width * scale;
-                    }
-                    document.getElementById("loader").style = "display:visible; position: absolute; top: 40%; left: 40%;";
-                    $.ajax({
-                        type: "POST",
-                        url: "/",
-                        data: {
-                            "img": image.src
-                        } //,
-                        //dataType: 'json' // FIXME: I have no clue why this is not enough
-                        // (maybe mime type from server?)
-                    }).fail(() => {
-                        console.log('oops, something went wrong with the request');
-                    }).done(function(respond) {
-                        document.getElementById("loader").style = "display:none;";
-                        respond = JSON.parse(respond);
-                        if (respond.length > 0) {
-                            document.getElementById("captured-img").style = "opacity: 1;";
-                            console.log(respond);
-                            for (var detected_url of respond) {
-                                var min_coord = {
-                                    x: Number.MAX_SAFE_INTEGER,
-                                    y: Number.MAX_SAFE_INTEGER
-                                };
-                                var max_coord = {
-                                    x: null,
-                                    y: null
-                                };
-                                for (var verts of detected_url.boundingPoly.vertices) {
-                                    min_coord.x = Math.min(verts.x, min_coord.x);
-                                    min_coord.y = Math.min(verts.y, min_coord.y);
-                                    max_coord.x = Math.max(verts.x, max_coord.x);
-                                    max_coord.y = Math.max(verts.y, max_coord.y);
-                                }
 
-                                if (scale !== 0) {
-                                    min_coord.x = min_coord.x * scale;
-                                    min_coord.y = min_coord.y * scale;
-                                    max_coord.x = max_coord.x * scale;
-                                    max_coord.y = max_coord.y * scale;
-                                }
+            $("#image-picker").change(function(event) {
+                $('.bounding-box').each(function(index) {
+                    $(this).remove();
+                });
+                var files = event.target.files;
+                if (files.length > 0) {
+                    var FR = new FileReader();
+                    FR.onload = function(e) {
+                        document.getElementById("startText").style = "display:none;";
+                        document.getElementById("captured-img").style = "opacity: 0.5;";
+                        var image = document.querySelector('img');
+                        image.src = e.target.result;
+                        var h = $(window).height();
+                        var w = $(window).width();
+                        var deltaH = image.height - h;
+                        var deltaW = image.width - w;
+                        var scale = 0;
+                        if (deltaH > 0 && deltaH > deltaW) {
+                            scale = h / image.height;
+                            image.height = image.height * scale;
+                        } else if (deltaW > 0 && deltaW > deltaH) {
+                            scale = w / image.width;
+                            image.width = image.width * scale;
+                        }
+                        document.getElementById("loader").style = "display:visible; position: absolute; top: 40%; left: 40%;";
+                        $.ajax({
+                            type: "POST",
+                            url: "/",
+                            data: {
+                                "img": image.src
+                            } //,
+                            //dataType: 'json' // FIXME: I have no clue why this is not enough
+                            // (maybe mime type from server?)
+                        }).fail(() => {
+                            console.log('oops, something went wrong with the request');
+                        }).done(function(respond) {
+                            document.getElementById("loader").style = "display:none;";
+                            respond = JSON.parse(respond);
+                            if (respond.length > 0) {
+                                document.getElementById("captured-img").style = "opacity: 1;";
+                                console.log(respond);
+                                for (var detected_url of respond) {
+                                    var min_coord = {
+                                        x: Number.MAX_SAFE_INTEGER,
+                                        y: Number.MAX_SAFE_INTEGER
+                                    };
+                                    var max_coord = {
+                                        x: null,
+                                        y: null
+                                    };
+                                    for (var verts of detected_url.boundingPoly.vertices) {
+                                        min_coord.x = Math.min(verts.x, min_coord.x);
+                                        min_coord.y = Math.min(verts.y, min_coord.y);
+                                        max_coord.x = Math.max(verts.x, max_coord.x);
+                                        max_coord.y = Math.max(verts.y, max_coord.y);
+                                    }
+
+                                    if (scale !== 0) {
+                                        min_coord.x = min_coord.x * scale;
+                                        min_coord.y = min_coord.y * scale;
+                                        max_coord.x = max_coord.x * scale;
+                                        max_coord.y = max_coord.y * scale;
+                                    }
 
 
-                                var img_offset = $('#captured-img').offset();
-                                var start = {
-                                    x: img_offset.left,
-                                    y: img_offset.top
-                                };
-                                $('body').append(
-                                    `<div class="bounding-box"
+                                    var img_offset = $('#captured-img').offset();
+                                    var start = {
+                                        x: img_offset.left,
+                                        y: img_offset.top
+                                    };
+                                    $('body').append(
+                                        `<div class="bounding-box"
                               data-url="${detected_url.href}"
                               style="position:absolute;
                               top: ${start.y + min_coord.y}px;
                               left: ${start.x + min_coord.x}px;
                               width: ${max_coord.x - min_coord.x}px;
                               height: ${max_coord.y - min_coord.y}px;"></div>`
-                                );
+                                    );
 
-                                $(document).on('click', '.bounding-box', (event) => {
-                                    window.location.href = $(event.target).data('url');
-                                });
+                                    $(document).on('click', '.bounding-box', (event) => {
+                                        window.location.href = $(event.target).data('url');
+                                    });
+                                }
+                            } else {
+                                document.getElementById("startText").innerHTML = "Nothing found. Please try again 🙄";
+                                document.getElementById("startText").style = "position:absolute; top:50%; width: 100%; text-align: center; display:block; background-color: white; opacity: 1; z-index: 150;";
                             }
-                        } else {
-                            document.getElementById("startText").innerHTML = "No URL found. Please try again 🙄";
-                            document.getElementById("startText").style = "position:absolute; top:50%; width: 100%; text-align: center; display:block;";
-                        }
-                    });
-                };
-                FR.readAsDataURL(this.files[0]);
-            }
-        });
-    </script>
+                        });
+                    };
+                    FR.readAsDataURL(this.files[0]);
+                }
+            });
+        </script>
 </body>
 
 </html>
