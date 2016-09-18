@@ -9,7 +9,7 @@ from flask import (Flask, jsonify, redirect, request, send_from_directory,
                    url_for)
 
 from backend.vision_api import VisionApi
-from backend.preprocessing import Preprocessing
+#from backend.preprocessing import Preprocessing
 from flask_cors import CORS, cross_origin
 from flask_sslify import SSLify
 
@@ -40,7 +40,7 @@ def allowed_file(filename):
 def upload_file():
     if request.method == 'POST':
         img = request.form['img']
-        img = Preprocessing.preprocess(img)
+        #img = Preprocessing.preprocess(img)
 
         vision = VisionApi()
         print("Received Image of Size %d" % len(img))
